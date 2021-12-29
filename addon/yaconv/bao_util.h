@@ -33,10 +33,13 @@
 
 */
 
-float *bao_yaconv_alloc
-     (
-       int size
-     );
+float *bao_aligned_alloc( int size );
+
+float *bao_seq_aligned_alloc( int size );
+
+void bao_init_yaconv_pools( int num, int *sizes, float*(malloc_fp)(int) );
+
+float *bao_get_yaconv_pool( int index );
 
 void bao_yaconv_pack
      (

@@ -36,7 +36,6 @@
 #include "blis.h"
 #include "bao_util.h"
 
-
 BLIS_EXPORT_ADDON void bao_sgemm
      (
        float *a, float *b, float *c,
@@ -65,9 +64,11 @@ BLIS_EXPORT_ADDON void bao_sgemm
     );
 
     // Allocate buffers
-    float *a_buff = bao_yaconv_alloc( MC * KC );
-    float *b_buff = bao_yaconv_alloc( KC * NC );
-    float *c_buff = bao_yaconv_alloc( MR * NR );
+    int pool_sizes[] = { MC * KC, KC * NC, MR * NR };
+    bao_init_yaconv_pools( 3, pool_sizes, bao_aligned_alloc );
+    float *a_buff = bao_get_yaconv_pool( 0 );
+    float *b_buff = bao_get_yaconv_pool( 1 );
+    float *c_buff = bao_get_yaconv_pool( 2 );
 
     // Loop indices
     int nc, kc, mc, nr, mr;

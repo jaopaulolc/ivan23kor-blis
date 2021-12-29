@@ -33,7 +33,6 @@
 
 */
 
-
 BLIS_EXPORT_ADDON void bao_sgemm
      (
        float *a, float *b, float *c,
