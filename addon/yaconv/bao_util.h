@@ -43,7 +43,7 @@ float *bao_get_yaconv_pool( int index );
 
 void bao_yaconv_pack
      (
-       float *src, dim_t rss, dim_t css,
+       float *src, int rss, int css,
        float *dst,
        int MN, int k, int MNR,
        cntx_t *cntx

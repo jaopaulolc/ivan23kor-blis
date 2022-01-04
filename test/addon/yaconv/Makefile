@@ -41,7 +41,7 @@
 # Makefile for standalone yaconv BLIS addon test drivers.
 #
 
-.PHONY: all \
+.PHONY: all conv gemm \
 				clean
 
 
@@ -93,18 +93,31 @@ CFLAGS += -DREPEAT=$(REPEAT)
 
 # --Targets --
 
-all: test_bao_sgemm.x test_bao_sgemm_blis.x test_bao_sgemm_openblas.x
+all: conv
+
+conv: test_yaconv.x test_im2col_blis.x test_im2col_openblas.x
+
+gemm: test_bao_sgemm.x test_sgemm_blis.x test_sgemm_openblas.x
 
 # --Object file rules --
 
-test_bao_sgemm.o: test_bao_sgemm.c
+test_bao_sgemm.o: test_sgemm.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test_bao_sgemm_blis.o: test_bao_sgemm.c
+test_sgemm_blis.o: test_sgemm.c
 	$(CC) $(CFLAGS) -DBLIS -c $< -o $@
 
-test_bao_sgemm_openblas.o: test_bao_sgemm.c
+test_sgemm_openblas.o: test_sgemm.c
 	$(CC) $(CFLAGS) -DOPENBLAS -c $< -o $@
+
+test_yaconv.o: test_conv.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+test_im2col_blis.o: test_conv.c
+	$(CC) $(CFLAGS) -DIM2COL_BLIS -c $< -o $@
+
+test_im2col_openblas.o: test_conv.c
+	$(CC) $(CFLAGS) -DIM2COL_OPENBLAS -c $< -o $@
 
 
 # --Executable file rules --
@@ -112,11 +125,20 @@ test_bao_sgemm_openblas.o: test_bao_sgemm.c
 test_bao_sgemm.x: test_bao_sgemm.o $(LIBBLIS_LINK)
 	$(LINKER) $< $(LIBBLIS_LINK) $(LDFLAGS) -o $@
 
-test_bao_sgemm_blis.x: test_bao_sgemm_blis.o $(LIBBLIS_LINK)
+test_sgemm_blis.x: test_sgemm_blis.o $(LIBBLIS_LINK)
 	$(LINKER) $< $(LIBBLIS_LINK) $(LDFLAGS) -o $@
 
-test_bao_sgemm_openblas.x: test_bao_sgemm_openblas.o $(LIBBLIS_LINK)
+test_sgemm_openblas.x: test_sgemm_openblas.o $(LIBBLIS_LINK)
 	$(LINKER) $< $(LIBOPENBLAS_LINK) $(LIBBLIS_LINK) $(LDFLAGS) -o $@
+
+test_yaconv.x: test_yaconv.o $(LIBBLIS_LINK)
+	$(LINKER) $< $(LIBBLIS_LINK) $(LDFLAGS) -o $@
+
+test_im2col_blis.x: test_im2col_blis.o $(LIBBLIS_LINK)
+	$(LINKER) $< $(LIBBLIS_LINK) $(LDFLAGS) -o $@
+
+test_im2col_openblas.x: test_im2col_openblas.o $(LIBBLIS_LINK)
+	$(LINKER) $< $(LIBBLIS_LINK) $(LIBOPENBLAS_LINK) $(LDFLAGS) -o $@
 
 # -- Clean rules --
 
