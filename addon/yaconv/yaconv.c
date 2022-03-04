@@ -55,11 +55,16 @@ static float *aligned_alloc(int size) {
     int ret = posix_memalign((void**)&data, BLIS_PAGE_SIZE,
                              size * sizeof(float));
 
-    if (ret == 0)
-      return data;
-
-    fprintf(stderr, "\033[31mAllocation error in posix_memalign!\033[0m\n");
-    exit(ret);
+    switch (ret) {
+      case 0:
+        return data;
+      case EINVAL:
+        fprintf(stderr, "\033[31mBad alignment in posix_memalign!\033[0m\n");
+      case ENOMEM:
+        fprintf(stderr, "\033[31mNo memory in posix_memalign!\033[0m\n");
+      default:
+        exit(ret);
+    }
 }
 
 // Packing functions
@@ -76,7 +81,7 @@ static void yaconv_pack(float *src, int rss, int css,
 }
 
 // Extra size functions
-static int yaconv_extra_size_after(int H, int FH, int PH, int OW, int M) {
+static int yaconv_extra_size_after(int H, int PH, int OW, int M) {
   cntx_t *cntx = bli_gks_query_cntx();
   int NR = bli_cntx_get_blksz_def_dt(BLIS_FLOAT, BLIS_NR, cntx);
 
@@ -84,16 +89,16 @@ static int yaconv_extra_size_after(int H, int FH, int PH, int OW, int M) {
   if (H % NR)
     extra_h = NR - H % NR;
 
-  return (extra_h + FH - 1 - PH) * OW * M;
+  return (extra_h + PH) * OW * M;
 }
 
 BLIS_EXPORT_ADDON int yaconv_extra_size_before(int FH, int PH, int OW, int M) {
-  return (FH - 1 - PH) * OW * M;
+  return bli_max(0, FH - 1 - PH) * OW * M;
 }
 
 BLIS_EXPORT_ADDON int yaconv_extra_size(int H, int FH, int PH, int OW, int M) {
   return yaconv_extra_size_before(FH, PH, OW, M)
-         + yaconv_extra_size_after(H, FH, PH, OW, M);
+         + yaconv_extra_size_after(H, PH, OW, M);
 }
 
 // The main yaconv function that computes convolution on a signle image
@@ -183,13 +188,11 @@ static void yaconv_init_once(int W, int FW, int C) {
   KC = bli_cntx_get_blksz_def_dt(BLIS_FLOAT, BLIS_KC, cntx);
   NC = bli_cntx_get_blksz_def_dt(BLIS_FLOAT, BLIS_NC, cntx);
 
-  // Adjust KC and NC at run-time so that the packed image buffer fits in L3
-  KC = bli_min(KC, FW * C);
+  // Adjust NC at run-time so that the packed image buffer fits in L3 and
+  // NC is the nearest multiple of NR greater than NC in BLIS
   NC = KC * NC / W / C;
-
-  // Expand NC to the nearest multiple of NR, as NC is chosen too conservatively
-  // for GEMM in BLIS
   NC += (NC % NR) ? NR - NC % NR : 0;
+  KC = bli_min(FW * C, KC); // to use less buffer space for small inputs
 
   // printf("MR = %d, NR = %d, MC = %d, KC = %d, NC = %d\n", MR, NR, MC, KC, NC);
 
