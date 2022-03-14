@@ -81,15 +81,12 @@ static void yaconv_pack(float *src, int rss, int css,
 }
 
 // Extra size functions
-static int yaconv_extra_size_after(int H, int PH, int OW, int M) {
+static int yaconv_extra_size_after(int H, int FH, int PH, int OW, int M) {
   cntx_t *cntx = bli_gks_query_cntx();
   int NR = bli_cntx_get_blksz_def_dt(BLIS_FLOAT, BLIS_NR, cntx);
+  int extra_h = H % NR ? NR - H % NR : 0;
 
-  int extra_h = 0;
-  if (H % NR)
-    extra_h = NR - H % NR;
-
-  return (extra_h + PH) * OW * M;
+  return bli_max(0, extra_h + FH - 1 - PH) * OW * M;
 }
 
 BLIS_EXPORT_ADDON int yaconv_extra_size_before(int FH, int PH, int OW, int M) {
@@ -98,7 +95,7 @@ BLIS_EXPORT_ADDON int yaconv_extra_size_before(int FH, int PH, int OW, int M) {
 
 BLIS_EXPORT_ADDON int yaconv_extra_size(int H, int FH, int PH, int OW, int M) {
   return yaconv_extra_size_before(FH, PH, OW, M)
-         + yaconv_extra_size_after(H, PH, OW, M);
+         + yaconv_extra_size_after(H, FH, PH, OW, M);
 }
 
 // The main yaconv function that computes convolution on a signle image
