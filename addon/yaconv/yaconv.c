@@ -204,7 +204,7 @@ static void yaconv_init_once(int W, int FW, int C) {
   output_buf = image_buf + output_buf_off;
 }
 
-void yaconv_deinit() {
+static void yaconv_deinit() {
   // All buffers are actually at different offsets within one
   free(filter_buf);
 }
