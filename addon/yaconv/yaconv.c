@@ -207,6 +207,10 @@ static void yaconv_init_once(int W, int FW, int C) {
 static void yaconv_deinit() {
   // All buffers are actually at different offsets within one
   free(filter_buf);
+  free(auxinfo);
+  // Ensure yaconv_init_once will allocate buffer on
+  // subsequent calls to yaconv.
+  filter_buf = NULL;
 }
 
 // This function performs intitialization of BLIS structures, block sizes and
